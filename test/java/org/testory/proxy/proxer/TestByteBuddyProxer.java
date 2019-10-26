@@ -17,7 +17,7 @@ import static org.testory.proxy.handler.ReturningHandler.returning;
 import static org.testory.proxy.handler.ThrowingHandler.throwing;
 import static org.testory.proxy.proxer.ByteBuddyProxer.byteBuddyProxer;
 import static org.testory.proxy.proxer.JdkCollectionsProxer.jdkCollections;
-import static org.testory.proxy.proxer.PrimitiveFixerProxer.primitiveFixer;
+import static org.testory.proxy.proxer.PrimitiveConverterProxer.primitiveConverter;
 import static org.testory.proxy.proxer.Tester.tester;
 import static org.testory.testing.Fakes.newObject;
 import static org.testory.testing.Fakes.newThrowable;
@@ -79,7 +79,7 @@ public class TestByteBuddyProxer {
 
   @Before
   public void before() throws NoSuchMethodException {
-    proxer = jdkCollections(primitiveFixer(byteBuddyProxer()));
+    proxer = jdkCollections(primitiveConverter(byteBuddyProxer()));
     typing = subclassing(Foo.class);
     method = Foo.class.getDeclaredMethod("getObject");
     handler = returning(null);
@@ -87,7 +87,7 @@ public class TestByteBuddyProxer {
     throwable = newThrowable("throwable");
   }
 
-  abstract class Foo {
+  public abstract class Foo {
     public void setObject(Object foo) {
       throw new RuntimeException();
     }

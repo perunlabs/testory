@@ -1,26 +1,28 @@
 package org.testory.proxy.proxer;
 
 import static org.testory.common.Classes.defaultValue;
+import static org.testory.common.Classes.tryWrap;
 import static org.testory.proxy.ProxyException.check;
 
 import org.testory.proxy.Handler;
 import org.testory.proxy.Invocation;
 import org.testory.proxy.Proxer;
+import org.testory.proxy.ProxyException;
 import org.testory.proxy.Typing;
 
 /**
  *
  */
-public class PrimitiveFixerProxer implements Proxer {
+public class PrimitiveConverterProxer implements Proxer {
   private final Proxer proxer;
 
-  private PrimitiveFixerProxer(Proxer proxer) {
+  private PrimitiveConverterProxer(Proxer proxer) {
     this.proxer = proxer;
   }
 
-  public static Proxer primitiveFixer(Proxer proxer) {
+  public static Proxer primitiveConverter(Proxer proxer) {
     check(proxer != null);
-    return new PrimitiveFixerProxer(proxer);
+    return new PrimitiveConverterProxer(proxer);
   }
 
   public Object proxy(Typing typing, Handler handler) {
@@ -34,12 +36,23 @@ public class PrimitiveFixerProxer implements Proxer {
       public Object handle(Invocation invocation) throws Throwable {
         Class<?> returnType = invocation.method.getReturnType();
         Object result = handler.handle(invocation);
-        return returnType.isPrimitive() && result == null
-            ? defaultValue(returnType)
+        return returnType.isPrimitive()
+            ? result == null
+                ? defaultValue(returnType)
+                : convertPrimitive(returnType, result)
             : result;
       }
+
     };
   }
 
-  public static class ProxiableObject {}
+  private static Object convertPrimitive(Class<?> primitiveType, Object wrapper) {
+    try {
+      return tryWrap(primitiveType)
+          .getDeclaredMethod("valueOf", primitiveType)
+          .invoke(null, wrapper);
+    } catch (ReflectiveOperationException e) {
+      throw new ProxyException(e);
+    }
+  }
 }
